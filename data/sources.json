@@ -1,0 +1,19 @@
+[
+  {
+    "id": "echap-stalkerware",
+    "name": "Echap – stalkerware-indicators",
+    "url": "https://github.com/AssoEchap/stalkerware-indicators",
+    "license": "CC BY 4.0",
+    "commercialUse": true,
+    "attribution": "Stalkerware-tunnisteet: Echap (CC BY 4.0)"
+  },
+  {
+    "id": "malwarebazaar-apk",
+    "name": "abuse.ch MalwareBazaar – Android APK -tiivisteet",
+    "url": "https://bazaar.abuse.ch/",
+    "license": "TARKISTA abuse.ch:n käyttöehdot ennen kaupallista käyttöä",
+    "commercialUse": null,
+    "attribution": "Haittaohjelmatiivisteet: abuse.ch MalwareBazaar",
+    "optional": true
+  }
+]

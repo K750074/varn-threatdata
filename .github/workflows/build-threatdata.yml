@@ -1,0 +1,95 @@
+name: Värn-uhkatiedot
+
+on:
+  schedule:
+    - cron: '17 3 * * *' # joka yö 03.17 UTC
+  workflow_dispatch: # käsin ajettavissa Actions-välilehdeltä
+
+# Oletuksena ei mitään oikeuksia – jokainen job pyytää vain tarvitsemansa
+permissions: {}
+
+concurrency:
+  group: threatdata
+  cancel-in-progress: false
+
+jobs:
+  # ------------------------------------------------------------
+  # 1) Kokoaminen: ulkoiset riippuvuudet, EI allekirjoitusavainta
+  # ------------------------------------------------------------
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      # Lukittu lockfile, asennusskriptit estetty
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Kokoa
+        env:
+          ABUSECH_AUTH_KEY: ${{ secrets.ABUSECH_AUTH_KEY }}
+          PREVIOUS_MANIFEST_URL: https://github.com/${{ github.repository }}/releases/latest/download/manifest.json
+        run: node tools/build-bundle.mjs
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: unsigned
+          path: out/
+          retention-days: 1
+          if-no-files-found: error
+
+  # ------------------------------------------------------------
+  # 2) Tarkistus, allekirjoitus ja julkaisu: EI npm installia
+  #    Avain on vain "signing"-ympäristössä, joka sallii vain main-haaran
+  # ------------------------------------------------------------
+  sign-and-publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: signing
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: unsigned
+          path: out
+
+      - name: Tarkista ja allekirjoita (vain Noden omat moduulit)
+        env:
+          SIGNING_KEY_PEM: ${{ secrets.SIGNING_KEY_PEM }}
+        run: node tools/sign-bundle.mjs
+
+      - name: Julkaise
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./out/manifest.json').version")
+          gh release create "data-$VERSION" \
+            out/manifest.json out/manifest.sig out/bundle.json.gz \
+            --repo "${{ github.repository }}" \
+            --title "Uhkatiedot $VERSION" \
+            --notes-file out/NOTES.md \
+            --latest
+
+      - name: Siivoa vanhat julkaisut (säilytetään 30 uusinta)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release list --repo "${{ github.repository }}" --limit 200 --json tagName --jq '.[].tagName' \
+            | grep '^data-' | tail -n +31 \
+            | xargs -r -I{} gh release delete {} --repo "${{ github.repository }}" --yes --cleanup-tag

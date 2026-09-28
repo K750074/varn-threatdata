@@ -1,0 +1,15 @@
+{
+  "name": "varn-threatdata",
+  "private": true,
+  "type": "module",
+  "description": "Värn – allekirjoitettu uhkatietopaketti",
+  "scripts": {
+    "keys": "node tools/gen-keys.mjs",
+    "keys:backup": "node tools/gen-keys.mjs backup",
+    "build": "node tools/build-bundle.mjs",
+    "sign": "node tools/sign-bundle.mjs"
+  },
+  "dependencies": {
+    "yaml": "^2.5.0"
+  }
+}

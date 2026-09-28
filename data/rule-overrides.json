@@ -1,0 +1,4 @@
+{
+  "_ohje": "Sääntömoottorin etäsäädöt. allowlistPackages: TARKAT paketinnimet (ei etuliitteitä), jotka aiheuttavat vääriä hälytyksiä. Koskee vain kaupasta asennettuja sovelluksia. Enintään 50 kpl.",
+  "allowlistPackages": []
+}
