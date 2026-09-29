@@ -18,6 +18,7 @@ import {createHash} from 'node:crypto';
 import {gzipSync} from 'node:zlib';
 import {mkdir, writeFile, readFile} from 'node:fs/promises';
 import YAML from 'yaml';
+import {loadExodusTrackers} from './exodus.mjs';
 
 const OUT = 'out';
 const SCHEMA = 1;
@@ -141,7 +142,15 @@ async function main() {
   const overrides = {allowlistPackages};
   const sources = JSON.parse(await readFile('data/sources.json', 'utf8'));
 
-  const [echap, mb, prev] = await Promise.all([loadEchap(), loadMalwareBazaar(), loadPreviousManifest()]);
+  const [echap, mb, exodus, prev] = await Promise.all([
+    loadEchap(),
+    loadMalwareBazaar(),
+    loadExodusTrackers().catch((e) => {
+      log(`Exodus: ohitettu (${e.message})`);
+      return null;
+    }),
+    loadPreviousManifest(),
+  ]);
 
   // Suoja virheellistä lähdedataa vastaan
   for (const p of neverFlag) {
@@ -165,6 +174,7 @@ async function main() {
       names: echap.names,
     },
     malwareApkSha256: sortSet(mb.hashes),
+    trackers: (exodus || []).sort((a, b) => a.name.localeCompare(b.name)),
     ruleOverrides: overrides,
     sources: sources
       .filter((s) => !(s.optional && s.id === 'malwarebazaar-apk' && mb.skipped))
@@ -175,6 +185,7 @@ async function main() {
     stalkerwarePackages: bundle.stalkerware.packages.length,
     stalkerwareCerts: bundle.stalkerware.certs.length,
     malwareApkSha256: bundle.malwareApkSha256.length,
+    trackers: bundle.trackers.length,
   };
   if (mb.skipped) delete counts.malwareApkSha256; // ei verrata, jos lähde ohitettiin tarkoituksella
   sanityCheck(counts, prev);

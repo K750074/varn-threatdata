@@ -15,5 +15,13 @@
     "commercialUse": null,
     "attribution": "Haittaohjelmatiivisteet: abuse.ch MalwareBazaar",
     "optional": true
+  },
+  {
+    "id": "exodus",
+    "name": "Exodus Privacy – seurantatunnisteet",
+    "url": "https://exodus-privacy.eu.org/",
+    "license": "Exodus Privacyn ehdot (ohjelmisto AGPL v3)",
+    "commercialUse": null,
+    "attribution": "Seurantatunnisteet: Exodus Privacy"
   }
 ]

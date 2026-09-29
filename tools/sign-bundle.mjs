@@ -21,7 +21,7 @@ const PACKAGE_RE = /^[A-Za-z][\w]*(\.[\w]+)+$/;
 const CERT_RE = /^([0-9a-f]{40}|[0-9a-f]{64})$/;
 const SHA256_RE = /^[0-9a-f]{64}$/;
 const ALLOWED_KEYS = new Set([
-  'schema', 'version', 'createdAt', 'stalkerware', 'malwareApkSha256', 'ruleOverrides', 'sources',
+  'schema', 'version', 'createdAt', 'stalkerware', 'malwareApkSha256', 'trackers', 'ruleOverrides', 'sources',
 ]);
 const MIN_PACKAGES = 50;
 const MAX_OVERRIDES = 50;
@@ -69,6 +69,13 @@ async function main() {
   const neverFlag = JSON.parse(await readFile('data/never-flag.json', 'utf8')).packages;
   const hit = neverFlag.filter((p) => pkgs.includes(p));
   if (hit.length) fail(`never-flag-paketteja mukana: ${hit.join(', ')}`);
+
+  const trackers = bundle.trackers || [];
+  if (!Array.isArray(trackers)) fail('trackers ei ole taulukko');
+  for (const tr of trackers) {
+    if (!tr || typeof tr.name !== 'string' || !Array.isArray(tr.prefixes)) fail('virheellinen tracker');
+  }
+  if (c.trackers !== trackers.length) fail('tracker-määrä ei täsmää');
 
   const ov = bundle.ruleOverrides || {};
   for (const k of Object.keys(ov)) if (k !== 'allowlistPackages') fail(`tuntematon etäsäätö ${k}`);
