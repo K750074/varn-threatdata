@@ -23,5 +23,21 @@
     "license": "Exodus Privacyn ehdot (ohjelmisto AGPL v3)",
     "commercialUse": null,
     "attribution": "Seurantatunnisteet: Exodus Privacy"
+  },
+  {
+    "id": "stevenblack",
+    "name": "StevenBlack hosts",
+    "url": "https://github.com/StevenBlack/hosts",
+    "license": "MIT",
+    "commercialUse": true,
+    "attribution": "Mainos- ja seurantaesto: StevenBlack hosts (MIT)"
+  },
+  {
+    "id": "urlhaus",
+    "name": "URLhaus (abuse.ch)",
+    "url": "https://urlhaus.abuse.ch/",
+    "license": "CC0",
+    "commercialUse": true,
+    "attribution": "Haittaohjelmaesto: abuse.ch URLhaus (CC0)"
   }
 ]

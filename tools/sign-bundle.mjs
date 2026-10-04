@@ -21,7 +21,7 @@ const PACKAGE_RE = /^[A-Za-z][\w]*(\.[\w]+)+$/;
 const CERT_RE = /^([0-9a-f]{40}|[0-9a-f]{64})$/;
 const SHA256_RE = /^[0-9a-f]{64}$/;
 const ALLOWED_KEYS = new Set([
-  'schema', 'version', 'createdAt', 'stalkerware', 'malwareApkSha256', 'trackers', 'ruleOverrides', 'sources',
+  'schema', 'version', 'createdAt', 'stalkerware', 'malwareApkSha256', 'trackers', 'blocklist', 'ruleOverrides', 'sources',
 ]);
 const MIN_PACKAGES = 50;
 const MAX_OVERRIDES = 50;
@@ -76,6 +76,14 @@ async function main() {
     if (!tr || typeof tr.name !== 'string' || !Array.isArray(tr.prefixes)) fail('virheellinen tracker');
   }
   if (c.trackers !== trackers.length) fail('tracker-määrä ei täsmää');
+
+  const blocklist = bundle.blocklist || [];
+  if (!Array.isArray(blocklist)) fail('blocklist ei ole taulukko');
+  if (c.blocklist !== blocklist.length) fail('estolistan määrä ei täsmää');
+  // never-flag-domainit eivät saa olla estolistalla (esim. pankit, suuret palvelut)
+  const neverFlagDomains = ['op.fi', 'posti.fi', 'nordea.fi', 'kela.fi', 'vero.fi', 'suomi.fi', 'google.com', 'apple.com'];
+  const clashing = neverFlagDomains.filter((d) => blocklist.includes(d));
+  if (clashing.length) fail(`estolistalla oikeita brändidomaineja: ${clashing.join(', ')}`);
 
   const ov = bundle.ruleOverrides || {};
   for (const k of Object.keys(ov)) if (k !== 'allowlistPackages') fail(`tuntematon etäsäätö ${k}`);
