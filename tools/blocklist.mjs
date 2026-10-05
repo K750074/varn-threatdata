@@ -103,6 +103,33 @@ export function generateFinnishTyposquat() {
   return out;
 }
 
+/**
+ * Tunnettujen DoH-palvelimien verkkotunnukset. Estämällä nämä selaimet, jotka käyttävät omaa
+ * salattua DNS:ää, putoavat takaisin järjestelmän DNS:ään (Värnin suodattimeen).
+ * EI sisällä Värnin omia palvelimia (cloudflare-dns.com, dns.google), jotka toimivat tunnelin ohi.
+ */
+export function dohBypassDomains() {
+  return [
+    // Chromen ja Firefoxin DoH-päätepisteet
+    "chrome.cloudflare-dns.com",
+    "mozilla.cloudflare-dns.com",
+    "firefox.dns.nextdns.io",
+    // Yleiset DoH-palvelut, joita sovellukset voivat käyttää suodattimen ohi
+    "doh.opendns.com",
+    "dns.adguard.com", "dns-family.adguard.com", "dns-unfiltered.adguard.com",
+    "doh.cleanbrowsing.org",
+    "dns.nextdns.io",
+    "doh.dns.sb", "dns.sb",
+    "doh.libredns.gr",
+    "dns.adguard-dns.com",
+    "freedns.controld.com",
+    "doh.mullvad.net", "dns.mullvad.net",
+    "dns10.quad9.net", "dns11.quad9.net", "dns9.quad9.net",
+    "doh-fi.blahdns.com", "doh-de.blahdns.com",
+    "ordns.he.net",
+  ];
+}
+
 export async function buildBlocklist(options = {}) {
   const all = new Set();
   const stats = {};
@@ -129,6 +156,11 @@ export async function buildBlocklist(options = {}) {
   const fi = generateFinnishTyposquat();
   fi.forEach((d) => all.add(d));
   stats.finnishTyposquat = fi.size;
+
+  // DoH-kiertosuoja: estä selainten oma salattu DNS, jotta ne palaavat Värnin suodattimeen
+  const doh = dohBypassDomains();
+  doh.forEach((d) => all.add(d));
+  stats.dohBypass = doh.length;
 
   return {domains: [...all].sort(), stats};
 }
