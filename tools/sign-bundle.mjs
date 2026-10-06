@@ -21,8 +21,10 @@ const PACKAGE_RE = /^[A-Za-z][\w]*(\.[\w]+)+$/;
 const CERT_RE = /^([0-9a-f]{40}|[0-9a-f]{64})$/;
 const SHA256_RE = /^[0-9a-f]{64}$/;
 const ALLOWED_KEYS = new Set([
-  'schema', 'version', 'createdAt', 'stalkerware', 'malwareApkSha256', 'trackers', 'blocklist', 'ruleOverrides', 'sources',
+  'schema', 'version', 'createdAt', 'stalkerware', 'malwareApkSha256', 'trackers', 'blocklist', 'typosquat', 'ruleOverrides', 'sources',
 ]);
+const COUNTRY_RE = /^[a-z]{2}$/;
+const DOMAIN_RE = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/;
 const MIN_PACKAGES = 50;
 const MAX_OVERRIDES = 50;
 const MAX_AGE_MS = 6 * 60 * 60 * 1000; // paketin oltava tuore (kooste samalta ajolta)
@@ -84,6 +86,20 @@ async function main() {
   const neverFlagDomains = ['op.fi', 'posti.fi', 'nordea.fi', 'kela.fi', 'vero.fi', 'suomi.fi', 'google.com', 'apple.com'];
   const clashing = neverFlagDomains.filter((d) => blocklist.includes(d));
   if (clashing.length) fail(`estolistalla oikeita brändidomaineja: ${clashing.join(', ')}`);
+
+  // Maakohtaiset typosquat-listat (aluetietoinen esto)
+  const typosquat = bundle.typosquat || {};
+  if (typeof typosquat !== 'object' || Array.isArray(typosquat)) fail('typosquat ei ole objekti');
+  let typosquatTotal = 0;
+  for (const [code, list] of Object.entries(typosquat)) {
+    if (!COUNTRY_RE.test(code)) fail(`virheellinen maakoodi ${code}`);
+    if (!Array.isArray(list)) fail(`typosquat.${code} ei ole taulukko`);
+    if (!list.every((d) => typeof d === 'string' && DOMAIN_RE.test(d))) fail(`typosquat.${code} sisältää virheellisen domainin`);
+    const clash = neverFlagDomains.filter((d) => list.includes(d));
+    if (clash.length) fail(`typosquat.${code} sisältää oikeita brändidomaineja: ${clash.join(', ')}`);
+    typosquatTotal += list.length;
+  }
+  if (c.typosquat != null && c.typosquat !== typosquatTotal) fail('typosquat-määrä ei täsmää');
 
   const ov = bundle.ruleOverrides || {};
   for (const k of Object.keys(ov)) if (k !== 'allowlistPackages') fail(`tuntematon etäsäätö ${k}`);

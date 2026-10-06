@@ -1,10 +1,14 @@
 /**
  * Värn – DNS-estolistan kokoaminen. Vain juridisesti sallivat lähteet (kaupallinen käyttö ok):
- *   - StevenBlack hosts (MIT): mainokset ja seuranta (~75 000)
- *   - URLhaus (CC0, abuse.ch): haittaohjelmapalvelimet
- *   - Oma Suomi-typosquat (generoitu itse, ei lisenssiä): kalastelu suomalaisilta brändeiltä
+ *   - StevenBlack hosts (MIT): mainokset ja seuranta (~75 000)   [universaali]
+ *   - URLhaus (CC0, abuse.ch): haittaohjelmapalvelimet            [universaali]
+ *   - DoH-kiertosuoja (oma kuratointi)                           [universaali]
+ *   - Oma typosquat (generoitu itse, ei lisenssiä): kalastelu paikallisilta brändeiltä [maakohtainen]
  *
- * Tuottaa yhden lajitellun, duplikaatittoman verkkotunnuslistan.
+ * Aluetietoinen: typosquat generoidaan maakohtaisesti (COUNTRIES). Kansainvälistyminen on vain
+ * uuden maan lisäys COUNTRIES-rakenteeseen – moottori ja sovelluksen logiikka pysyvät samoina.
+ *
+ * Palauttaa: { universal: [...], typosquat: { fi:[...], se:[...] }, stats }
  */
 
 const SOURCES = {
@@ -14,17 +18,52 @@ const SOURCES = {
 
 const DOMAIN_RE = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/;
 
-/** Suomalaiset brändit, joita huijarit jäljittelevät. Näistä generoidaan typosquat-muunnelmat. */
-const FI_BRANDS = [
-  "posti", "op", "nordea", "spankki", "s-pankki", "danskebank", "danske", "handelsbanken",
-  "aktia", "saastopankki", "spop", "omasp", "poppankki",
-  "kela", "vero", "omakanta", "kanta", "traficom", "poliisi", "suomi", "suomifi", "dvv",
-  "telia", "elisa", "dna", "verkkokauppa", "tokmanni", "prisma", "kesko", "kruoka",
-  "lahitapiola", "pohjola", "fennia", "mandatum", "osuuspankki",
-];
+// Yleiset pääteosat, joilla huijaussivut esiintyvät (jaetaan kaikille maille maan oman ccTLD:n lisäksi).
+const GENERIC_TLDS = ["com", "net", "info", "org", "online", "site", "xyz"];
 
-/** Yleiset pääteosat, joilla huijaussivut esiintyvät. */
-const FI_TLDS = ["com", "net", "info", "fi", "org", "online", "site", "xyz"];
+/**
+ * Maakohtaiset brändit, teemasanat ja pääteosat. Lisää uusi maa tähän – ei muuta tarvita.
+ * Teemasanat ja brändit ASCII-muodossa (verkkotunnukset ovat ASCII/punycode; huijarit käyttävät
+ * ASCII-muunnelmia, esim. "sakerhet" eikä "säkerhet").
+ */
+export const COUNTRIES = {
+  fi: {
+    label: "Suomi",
+    brands: [
+      "posti", "op", "nordea", "spankki", "s-pankki", "danskebank", "danske", "handelsbanken",
+      "aktia", "saastopankki", "spop", "omasp", "poppankki",
+      "kela", "vero", "omakanta", "kanta", "traficom", "poliisi", "suomi", "suomifi", "dvv",
+      "telia", "elisa", "dna", "verkkokauppa", "tokmanni", "prisma", "kesko", "kruoka",
+      "lahitapiola", "pohjola", "fennia", "mandatum", "osuuspankki",
+    ],
+    themes: [
+      "fi", "-fi", "suomi", "-suomi", "-turvallisuus", "-tunnistautuminen", "-tunnistus",
+      "-vahvistus", "-vahvista", "-maksu", "-maksupalautus", "-palautus", "-paivitys",
+      "-tili", "-verkkopankki", "-pankki", "-asiointi", "-kirjautuminen", "-login", "-secure",
+    ],
+    tlds: ["fi", ...GENERIC_TLDS],
+  },
+  // Ruotsi: aloituslista, jota laajennetaan ennen Ruotsin-julkaisua. Rakenne on todistettu
+  // kahdella maalla, joten lisäys on pelkkää dataa.
+  se: {
+    label: "Ruotsi",
+    brands: [
+      "swedbank", "seb", "handelsbanken", "nordea", "lansforsakringar", "icabanken", "ica",
+      "skandia", "avanza", "nordnet", "klarna", "bankid", "swish",
+      "skatteverket", "forsakringskassan", "csn", "1177", "postnord",
+      "telia", "tele2", "comviq", "telenor",
+    ],
+    themes: [
+      "se", "-se", "sverige", "-sverige", "-sakerhet", "-verifiera", "-verifiering",
+      "-bekrafta", "-betalning", "-aterbetalning", "-uppdatering", "-konto", "-inloggning",
+      "-logga-in", "-login", "-secure", "-bankid", "-swish",
+    ],
+    tlds: ["se", ...GENERIC_TLDS],
+  },
+};
+
+/** Värnin kotimarkkina: aina mukana estolistassa (myös ulkomailla olevan suomalaisen suojaksi). */
+export const HOME_COUNTRY = "fi";
 
 async function fetchLines(url, authKey) {
   const headers = {"User-Agent": "Varn-ThreatData/1"};
@@ -58,14 +97,17 @@ async function loadHostsSource(url, authKey) {
 }
 
 /**
- * Generoi typosquat-muunnelmat suomalaisista brändeistä. Esim. "posti" ->
- * p0sti, posti-fi, postii, pösti jne. yhdistettynä pääteosiin.
+ * Geneerinen typosquat-generaattori: brändeistä muunnelmat (leet-korvaus, kirjaimen kahdennus,
+ * näppäinvaihto, teemasanat) yhdistettynä pääteosiin. Kieliriippumaton moottori.
  */
-export function generateFinnishTyposquat() {
+export function generateTyposquat(brands, themes, tlds) {
   const out = new Set();
   const leet = {o: "0", i: "1", l: "1", a: "4", e: "3", s: "5"};
+  const brandList = Array.isArray(brands) ? brands : [];
+  const themeList = Array.isArray(themes) ? themes : [];
+  const tldList = Array.isArray(tlds) ? tlds : GENERIC_TLDS;
 
-  for (const brand of FI_BRANDS) {
+  for (const brand of brandList) {
     const variants = new Set();
     // 1. kirjainten korvaus (leet)
     for (let i = 0; i < brand.length; i++) {
@@ -80,27 +122,31 @@ export function generateFinnishTyposquat() {
     for (let i = 0; i < brand.length - 1; i++) {
       variants.add(brand.slice(0, i) + brand[i + 1] + brand[i] + brand.slice(i + 2));
     }
-    // 4. yhdistelmät: pääte + huijausten teemasanat (Kyberturvallisuuskeskuksen ja pankkien
-    //    varoitusten mukaan huijarit käyttävät näitä: tunnistautuminen, vahvistus, maksun palautus,
-    //    tietoturvapäivitys, tilin vahvistus, tietojen päivitys).
-    const themes = [
-      "fi", "-fi", "suomi", "-suomi", "-turvallisuus", "-tunnistautuminen", "-tunnistus",
-      "-vahvistus", "-vahvista", "-maksu", "-maksupalautus", "-palautus", "-paivitys",
-      "-tili", "-verkkopankki", "-pankki", "-asiointi", "-kirjautuminen", "-login", "-secure",
-    ];
-    for (const theme of themes) variants.add(brand + theme);
+    // 4. pääte + huijausten teemasanat
+    for (const theme of themeList) variants.add(brand + theme);
 
-    // Yhdistä pääteosiin
     for (const v of variants) {
-      if (v === brand) continue; // ei estetä oikeaa brändiä tässä (ne ovat eri domaineja)
+      if (v === brand) continue; // oikeaa brändiä ei estetä (eri domain)
       if (v.length < 4) continue; // liian lyhyt muunnos aiheuttaisi vääriä estoja (esim. 0p.com)
-      for (const tld of FI_TLDS) {
+      for (const tld of tldList) {
         const domain = `${v}.${tld}`;
         if (DOMAIN_RE.test(domain)) out.add(domain);
       }
     }
   }
   return out;
+}
+
+/** Yhden maan typosquat-lista. */
+export function generateCountryTyposquat(code) {
+  const c = COUNTRIES[code];
+  if (!c) return new Set();
+  return generateTyposquat(c.brands, c.themes, c.tlds);
+}
+
+/** Säilytetään vanhan nimen vuoksi (= Suomi). */
+export function generateFinnishTyposquat() {
+  return generateCountryTyposquat("fi");
 }
 
 /**
@@ -110,11 +156,7 @@ export function generateFinnishTyposquat() {
  */
 export function dohBypassDomains() {
   return [
-    // Chromen ja Firefoxin DoH-päätepisteet
-    "chrome.cloudflare-dns.com",
-    "mozilla.cloudflare-dns.com",
-    "firefox.dns.nextdns.io",
-    // Yleiset DoH-palvelut, joita sovellukset voivat käyttää suodattimen ohi
+    "chrome.cloudflare-dns.com", "mozilla.cloudflare-dns.com", "firefox.dns.nextdns.io",
     "doh.opendns.com",
     "dns.adguard.com", "dns-family.adguard.com", "dns-unfiltered.adguard.com",
     "doh.cleanbrowsing.org",
@@ -130,37 +172,47 @@ export function dohBypassDomains() {
   ];
 }
 
+/**
+ * Kokoaa estolistan. Universaali osa (mainokset, seuranta, haittaohjelmat, DoH-kierto) on sama
+ * kaikkialla; typosquat on maakohtainen. Palauttaa universaalin listan ja maakohtaiset listat
+ * erikseen, jotta sovellus voi ladata käyttäjän alueen mukaan.
+ */
 export async function buildBlocklist(options = {}) {
-  const all = new Set();
+  const universal = new Set();
   const stats = {};
 
-  // StevenBlack (MIT)
+  // StevenBlack (MIT) – universaali
   try {
     const sb = await loadHostsSource(SOURCES.stevenblack);
-    sb.domains.forEach((d) => all.add(d));
+    sb.domains.forEach((d) => universal.add(d));
     stats.stevenblack = sb.domains.size;
   } catch (e) {
     stats.stevenblack = `virhe: ${e.message}`;
   }
 
-  // URLhaus (CC0). Fair use: haetaan kerran vuorokaudessa.
+  // URLhaus (CC0) – universaali
   try {
     const uh = await loadHostsSource(SOURCES.urlhaus, options.urlhausAuthKey);
-    uh.domains.forEach((d) => all.add(d));
+    uh.domains.forEach((d) => universal.add(d));
     stats.urlhaus = uh.domains.size;
   } catch (e) {
     stats.urlhaus = `ohitettu: ${e.message}`;
   }
 
-  // Oma Suomi-typosquat (ei lisenssiä)
-  const fi = generateFinnishTyposquat();
-  fi.forEach((d) => all.add(d));
-  stats.finnishTyposquat = fi.size;
-
-  // DoH-kiertosuoja: estä selainten oma salattu DNS, jotta ne palaavat Värnin suodattimeen
+  // DoH-kiertosuoja – universaali
   const doh = dohBypassDomains();
-  doh.forEach((d) => all.add(d));
+  doh.forEach((d) => universal.add(d));
   stats.dohBypass = doh.length;
 
-  return {domains: [...all].sort(), stats};
+  // Maakohtainen typosquat
+  const typosquat = {};
+  const tstats = {};
+  for (const code of Object.keys(COUNTRIES)) {
+    const set = generateCountryTyposquat(code);
+    typosquat[code] = [...set].sort();
+    tstats[code] = set.size;
+  }
+  stats.typosquat = tstats;
+
+  return {universal: [...universal].sort(), typosquat, stats};
 }

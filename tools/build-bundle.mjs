@@ -19,7 +19,7 @@ import {gzipSync} from 'node:zlib';
 import {mkdir, writeFile, readFile} from 'node:fs/promises';
 import YAML from 'yaml';
 import {loadExodusTrackers} from './exodus.mjs';
-import {buildBlocklist} from './blocklist.mjs';
+import {buildBlocklist, HOME_COUNTRY} from './blocklist.mjs';
 
 const OUT = 'out';
 const SCHEMA = 1;
@@ -169,6 +169,15 @@ async function main() {
   const version = versionNow();
   const createdAt = new Date().toISOString();
 
+  // Estolista: universaali osa (mainokset, seuranta, haittaohjelmat, DoH-kierto) + maakohtaiset
+  // typosquat-listat. Kenttä "blocklist" = universaali + kotimaan (fi) typosquat, jotta vanhakin
+  // sovellus suojaa koti­markkinan. Kenttä "typosquat" = kaikki maat, josta sovellus lataa käyttäjän
+  // alueen mukaan (universaali + oma alue). Päällekkäisyys poistetaan natiivissa (Set).
+  const universal = blocklist ? blocklist.universal : [];
+  const typosquat = blocklist ? blocklist.typosquat : {};
+  const homeScams = typosquat[HOME_COUNTRY] || [];
+  const composedBlocklist = [...new Set([...universal, ...homeScams])].sort();
+
   const bundle = {
     schema: SCHEMA,
     version,
@@ -180,19 +189,22 @@ async function main() {
     },
     malwareApkSha256: sortSet(mb.hashes),
     trackers: (exodus || []).sort((a, b) => a.name.localeCompare(b.name)),
-    blocklist: blocklist ? blocklist.domains : [],
+    blocklist: composedBlocklist,
+    typosquat,
     ruleOverrides: overrides,
     sources: sources
       .filter((s) => !(s.optional && s.id === 'malwarebazaar-apk' && mb.skipped))
       .map(({id, name, url, license, attribution}) => ({id, name, url, license, attribution})),
   };
 
+  const typosquatTotal = Object.values(typosquat).reduce((n, a) => n + (Array.isArray(a) ? a.length : 0), 0);
   const counts = {
     stalkerwarePackages: bundle.stalkerware.packages.length,
     stalkerwareCerts: bundle.stalkerware.certs.length,
     malwareApkSha256: bundle.malwareApkSha256.length,
     trackers: bundle.trackers.length,
     blocklist: bundle.blocklist.length,
+    typosquat: typosquatTotal,
   };
   if (mb.skipped) delete counts.malwareApkSha256; // ei verrata, jos lähde ohitettiin tarkoituksella
   sanityCheck(counts, prev);
