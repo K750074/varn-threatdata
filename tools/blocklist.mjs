@@ -32,7 +32,10 @@ export const COUNTRIES = {
     brands: [
       "posti", "op", "nordea", "spankki", "s-pankki", "danskebank", "danske", "handelsbanken",
       "aktia", "saastopankki", "spop", "omasp", "poppankki",
-      "kela", "vero", "omakanta", "kanta", "traficom", "poliisi", "suomi", "suomifi", "dvv",
+      "kela", "vero", "omakanta", "kanta", "traficom", "poliisi", "dvv",
+      // Huom: "suomi"/"suomifi" poistettu brändeistä – liian geneerisiä (osuvat oikeisiin sanoihin,
+      // esim. usomi/soumi). suomi.fi-huijaukset katetaan konkreettisten viranomaisbrändien kautta
+      // (kela, vero, omakanta, kanta, traficom, poliisi, dvv) sekä teemasanoilla "suomi"/"-suomi".
       "telia", "elisa", "dna", "verkkokauppa", "tokmanni", "prisma", "kesko", "kruoka",
       "lahitapiola", "pohjola", "fennia", "mandatum", "osuuspankki",
     ],
@@ -97,10 +100,43 @@ async function loadHostsSource(url, authKey) {
 }
 
 /**
+ * Tunnetut oikeat verkkotunnukset, joita EI koskaan estetä, vaikka generaattori ne tuottaisi.
+ * Turvaverkko muunnosten törmäyksille (lyhyen brändin muunnos osuu oikeaan sanaan tai toiseen
+ * brändiin). Jos huomaat väärän osuman listalla, lisää domain tähän – se pudotetaan rakennuksessa.
+ * Sisältää myös brändien omat oikeat domainit: niitä ei saa koskaan estää.
+ */
+export const KNOWN_GOOD = new Set([
+  // Tunnettu törmäys: aktia-pankin näppäinvaihdosta syntyy "katia" – oikea lankamerkki, ei huijaus.
+  "katia.com", "katia.es",
+  // Suomi – viranomaiset, pankit ja kauppa (oikeat sivustot, ei koskaan estoon)
+  "posti.fi", "op.fi", "osuuspankki.fi", "nordea.fi", "nordea.com", "danskebank.fi",
+  "handelsbanken.fi", "aktia.fi", "saastopankki.fi", "omasp.fi", "poppankki.fi", "s-pankki.fi",
+  "kela.fi", "vero.fi", "omakanta.fi", "kanta.fi", "traficom.fi", "poliisi.fi", "suomi.fi", "dvv.fi",
+  "telia.fi", "elisa.fi", "dna.fi", "verkkokauppa.com", "tokmanni.fi", "prisma.fi", "kesko.fi",
+  "lahitapiola.fi", "pohjola.fi", "fennia.fi", "mandatum.fi",
+  // Ruotsi – viranomaiset ja pankit
+  "swedbank.se", "seb.se", "handelsbanken.se", "nordea.se", "lansforsakringar.se", "icabanken.se",
+  "ica.se", "skandia.se", "avanza.se", "nordnet.se", "klarna.com", "bankid.com", "skatteverket.se",
+  "forsakringskassan.se", "csn.se", "1177.se", "postnord.se", "telia.se", "tele2.se", "comviq.se",
+  "telenor.se",
+]);
+
+// Muunnoskohtaiset pituusrajat: lyhyillä brändeillä muunnokset osuvat liian usein oikeisiin sanoihin.
+const MIN_MUTATION_LEN = 4; // leet-korvaus & kahdennus (p0sti ok; lyhyemmistä tulee roskaa)
+const MIN_SWAP_LEN = 7;     // näppäinvaihto on pahin (aktia→katia, suomi→usomi) – vain pitkät brändit
+
+/**
  * Geneerinen typosquat-generaattori: brändeistä muunnelmat (leet-korvaus, kirjaimen kahdennus,
  * näppäinvaihto, teemasanat) yhdistettynä pääteosiin. Kieliriippumaton moottori.
+ *
+ * Väärien osumien minimointi:
+ *  - leet & kahdennus vain vähintään MIN_MUTATION_LEN merkin brändeille,
+ *  - näppäinvaihto vain vähintään MIN_SWAP_LEN merkin brändeille JA ilman ensimmäistä kirjainparia
+ *    (juuri ensimmäisen parin vaihto tuottaa useimmin oikean sanan: aktia→katia, suomi→usomi),
+ *  - teemasanat (brandi+"-maksu" ym.) sallitaan aina: brändiankkuroituna ne ovat yksiselitteisiä,
+ *  - lopuksi KNOWN_GOOD-suodatin pudottaa tunnetut oikeat domainit.
  */
-export function generateTyposquat(brands, themes, tlds) {
+export function generateTyposquat(brands, themes, tlds, knownGood = KNOWN_GOOD) {
   const out = new Set();
   const leet = {o: "0", i: "1", l: "1", a: "4", e: "3", s: "5"};
   const brandList = Array.isArray(brands) ? brands : [];
@@ -109,20 +145,26 @@ export function generateTyposquat(brands, themes, tlds) {
 
   for (const brand of brandList) {
     const variants = new Set();
-    // 1. kirjainten korvaus (leet)
-    for (let i = 0; i < brand.length; i++) {
-      const c = brand[i];
-      if (leet[c]) variants.add(brand.slice(0, i) + leet[c] + brand.slice(i + 1));
+    // 1. kirjainten korvaus (leet) – vain riittävän pitkät brändit
+    if (brand.length >= MIN_MUTATION_LEN) {
+      for (let i = 0; i < brand.length; i++) {
+        const c = brand[i];
+        if (leet[c]) variants.add(brand.slice(0, i) + leet[c] + brand.slice(i + 1));
+      }
     }
-    // 2. kirjaimen kahdennus
-    for (let i = 0; i < brand.length; i++) {
-      variants.add(brand.slice(0, i + 1) + brand[i] + brand.slice(i + 1));
+    // 2. kirjaimen kahdennus – vain riittävän pitkät brändit
+    if (brand.length >= MIN_MUTATION_LEN) {
+      for (let i = 0; i < brand.length; i++) {
+        variants.add(brand.slice(0, i + 1) + brand[i] + brand.slice(i + 1));
+      }
     }
-    // 3. viereiset vaihdot (näppäimistövirheet)
-    for (let i = 0; i < brand.length - 1; i++) {
-      variants.add(brand.slice(0, i) + brand[i + 1] + brand[i] + brand.slice(i + 2));
+    // 3. viereiset vaihdot (näppäimistövirheet) – vain pitkät brändit, ei ensimmäistä paria
+    if (brand.length >= MIN_SWAP_LEN) {
+      for (let i = 1; i < brand.length - 1; i++) {
+        variants.add(brand.slice(0, i) + brand[i + 1] + brand[i] + brand.slice(i + 2));
+      }
     }
-    // 4. pääte + huijausten teemasanat
+    // 4. pääte + huijausten teemasanat – aina (brändiankkuroitu)
     for (const theme of themeList) variants.add(brand + theme);
 
     for (const v of variants) {
@@ -130,7 +172,9 @@ export function generateTyposquat(brands, themes, tlds) {
       if (v.length < 4) continue; // liian lyhyt muunnos aiheuttaisi vääriä estoja (esim. 0p.com)
       for (const tld of tldList) {
         const domain = `${v}.${tld}`;
-        if (DOMAIN_RE.test(domain)) out.add(domain);
+        if (!DOMAIN_RE.test(domain)) continue;
+        if (knownGood.has(domain)) continue; // turvaverkko: älä estä tunnettua oikeaa domainia
+        out.add(domain);
       }
     }
   }
@@ -214,5 +258,7 @@ export async function buildBlocklist(options = {}) {
   }
   stats.typosquat = tstats;
 
-  return {universal: [...universal].sort(), typosquat, stats};
+  // Suodata myös universaalilista tunnetuista oikeista domaineista (turvaverkko ylävirran datalle).
+  const universalClean = [...universal].filter((d) => !KNOWN_GOOD.has(d)).sort();
+  return {universal: universalClean, typosquat, stats};
 }
