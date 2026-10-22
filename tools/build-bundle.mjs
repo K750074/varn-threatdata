@@ -194,7 +194,8 @@ async function main() {
     ruleOverrides: overrides,
     sources: sources
       .filter((s) => !(s.optional && s.id === 'malwarebazaar-apk' && mb.skipped))
-      .map(({id, name, url, license, attribution}) => ({id, name, url, license, attribution})),
+      .map(({id, name, url, license, attribution, credit, creditLicense}) =>
+        ({id, name, url, license, attribution, credit, creditLicense: creditLicense ?? null})),
   };
 
   const typosquatTotal = Object.values(typosquat).reduce((n, a) => n + (Array.isArray(a) ? a.length : 0), 0);

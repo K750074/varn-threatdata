@@ -5,6 +5,8 @@
     "url": "https://github.com/AssoEchap/stalkerware-indicators",
     "license": "CC BY 4.0",
     "commercialUse": true,
+    "credit": "Echap",
+    "creditLicense": "CC BY 4.0",
     "attribution": "Stalkerware-tunnisteet: Echap (CC BY 4.0)"
   },
   {
@@ -13,6 +15,8 @@
     "url": "https://bazaar.abuse.ch/",
     "license": "TARKISTA abuse.ch:n käyttöehdot ennen kaupallista käyttöä",
     "commercialUse": null,
+    "credit": "abuse.ch MalwareBazaar",
+    "creditLicense": null,
     "attribution": "Haittaohjelmatiivisteet: abuse.ch MalwareBazaar",
     "optional": true
   },
@@ -22,6 +26,8 @@
     "url": "https://exodus-privacy.eu.org/",
     "license": "Exodus Privacyn ehdot (ohjelmisto AGPL v3)",
     "commercialUse": null,
+    "credit": "Exodus Privacy",
+    "creditLicense": null,
     "attribution": "Seurantatunnisteet: Exodus Privacy"
   },
   {
@@ -30,6 +36,8 @@
     "url": "https://github.com/StevenBlack/hosts",
     "license": "MIT",
     "commercialUse": true,
+    "credit": "StevenBlack hosts",
+    "creditLicense": "MIT",
     "attribution": "Mainos- ja seurantaesto: StevenBlack hosts (MIT)"
   },
   {
@@ -38,6 +46,8 @@
     "url": "https://urlhaus.abuse.ch/",
     "license": "CC0",
     "commercialUse": true,
+    "credit": "abuse.ch URLhaus",
+    "creditLicense": "CC0",
     "attribution": "Haittaohjelmaesto: abuse.ch URLhaus (CC0)"
   }
 ]
