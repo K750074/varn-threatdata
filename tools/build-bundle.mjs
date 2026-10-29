@@ -20,6 +20,7 @@ import {mkdir, writeFile, readFile} from 'node:fs/promises';
 import YAML from 'yaml';
 import {loadExodusTrackers} from './exodus.mjs';
 import {buildBlocklist, HOME_COUNTRY} from './blocklist.mjs';
+import {loadSpywareDomains} from './spyware.mjs';
 
 const OUT = 'out';
 const SCHEMA = 1;
@@ -143,7 +144,7 @@ async function main() {
   const overrides = {allowlistPackages};
   const sources = JSON.parse(await readFile('data/sources.json', 'utf8'));
 
-  const [echap, mb, exodus, blocklist, prev] = await Promise.all([
+  const [echap, mb, exodus, blocklist, spyware, prev] = await Promise.all([
     loadEchap(),
     loadMalwareBazaar(),
     loadExodusTrackers().catch((e) => {
@@ -152,6 +153,10 @@ async function main() {
     }),
     buildBlocklist({urlhausAuthKey: process.env.URLHAUS_AUTH_KEY}).catch((e) => {
       log(`Estolista: ohitettu (${e.message})`);
+      return null;
+    }),
+    loadSpywareDomains().catch((e) => {
+      log(`Vakoiluohjelmat: ohitettu (${e.message})`);
       return null;
     }),
     loadPreviousManifest(),
@@ -191,9 +196,13 @@ async function main() {
     trackers: (exodus || []).sort((a, b) => a.name.localeCompare(b.name)),
     blocklist: composedBlocklist,
     typosquat,
+    // Valtiotason vakoiluohjelmien verkkotunnukset: [[domain, kampanjaindeksi]]. Sovellus estää ne
+    // aina (käyttäjä ei voi sallia) ja näyttää vakavan ilmoituksen.
+    spyware: {campaigns: spyware ? spyware.campaigns : [], domains: spyware ? spyware.domains : []},
     ruleOverrides: overrides,
     sources: sources
       .filter((s) => !(s.optional && s.id === 'malwarebazaar-apk' && mb.skipped))
+      .filter((s) => !(s.id.startsWith('spyware-') && !spyware))
       .map(({id, name, url, license, attribution, credit, creditLicense}) =>
         ({id, name, url, license, attribution, credit, creditLicense: creditLicense ?? null})),
   };
@@ -206,7 +215,9 @@ async function main() {
     trackers: bundle.trackers.length,
     blocklist: bundle.blocklist.length,
     typosquat: typosquatTotal,
+    spywareDomains: bundle.spyware.domains.length,
   };
+  if (!spyware) delete counts.spywareDomains; // lähde ei vastannut → ei verrata edelliseen
   if (mb.skipped) delete counts.malwareApkSha256; // ei verrata, jos lähde ohitettiin tarkoituksella
   sanityCheck(counts, prev);
 
@@ -242,6 +253,7 @@ async function main() {
   );
 
   if (blocklist) log(`Estolista: ${JSON.stringify(blocklist.stats)}`);
+  if (spyware) log(`Vakoiluohjelmat: ${JSON.stringify(spyware.stats)}`);
   log(`Koottu: versio ${version}, paketti ${(gz.length / 1024).toFixed(1)} kt (allekirjoittamaton)`);
 }
 

@@ -24,4 +24,6 @@ Sovellus lataa paketin ja tekee kaiken vertailun puhelimessa. Jokainen käyttäj
 
 ## Lähteet ja lisenssit
 
-Katso `data/sources.json`. Echapin data on CC BY 4.0 -lisensoitu: lähdemaininta näytetään sovelluksessa.
+Katso `data/sources.json`. Echapin data on CC BY 4.0 -lisensoitu ja Amnestyn vakoiluohjelmatunnisteet CC BY 2.0: lähdemaininta näytetään sovelluksessa.
+
+Vakoiluohjelmat (`tools/spyware.mjs`): MVT:n indeksistä otetaan vain AmnestyTechin (CC BY 2.0) ja mvt-projectin (MIT) kokoelmat. Ei-kaupalliset lähteet (esim. Citizen Lab) ohitetaan.

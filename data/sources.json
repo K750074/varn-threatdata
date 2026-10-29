@@ -49,5 +49,25 @@
     "credit": "abuse.ch URLhaus",
     "creditLicense": "CC0",
     "attribution": "Haittaohjelmaesto: abuse.ch URLhaus (CC0)"
+  },
+  {
+    "id": "spyware-amnesty",
+    "name": "Amnesty International – Security Lab investigations",
+    "url": "https://github.com/AmnestyTech/investigations",
+    "license": "CC BY 2.0",
+    "commercialUse": true,
+    "credit": "Amnesty International Security Lab",
+    "creditLicense": "CC BY 2.0",
+    "attribution": "Vakoiluohjelmatunnisteet: Amnesty International Security Lab (CC BY 2.0)"
+  },
+  {
+    "id": "spyware-mvt",
+    "name": "MVT – mvt-indicators",
+    "url": "https://github.com/mvt-project/mvt-indicators",
+    "license": "MIT",
+    "commercialUse": true,
+    "credit": "Mobile Verification Toolkit (MVT)",
+    "creditLicense": "MIT",
+    "attribution": "Vakoiluohjelmatunnisteet: MVT indicators (MIT)"
   }
 ]

@@ -21,7 +21,7 @@ const PACKAGE_RE = /^[A-Za-z][\w]*(\.[\w]+)+$/;
 const CERT_RE = /^([0-9a-f]{40}|[0-9a-f]{64})$/;
 const SHA256_RE = /^[0-9a-f]{64}$/;
 const ALLOWED_KEYS = new Set([
-  'schema', 'version', 'createdAt', 'stalkerware', 'malwareApkSha256', 'trackers', 'blocklist', 'typosquat', 'ruleOverrides', 'sources',
+  'schema', 'version', 'createdAt', 'stalkerware', 'malwareApkSha256', 'trackers', 'blocklist', 'typosquat', 'spyware', 'ruleOverrides', 'sources',
 ]);
 const COUNTRY_RE = /^[a-z]{2}$/;
 const DOMAIN_RE = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/;
@@ -100,6 +100,24 @@ async function main() {
     typosquatTotal += list.length;
   }
   if (c.typosquat != null && c.typosquat !== typosquatTotal) fail('typosquat-määrä ei täsmää');
+
+  // Vakoiluohjelmien verkkotunnukset: [[domain, kampanjaindeksi]], kampanjat [{name, source}]
+  const spy = bundle.spyware || {campaigns: [], domains: []};
+  if (!Array.isArray(spy.campaigns) || !Array.isArray(spy.domains)) fail('spyware-rakenne');
+  for (const k of Object.keys(spy)) if (k !== 'campaigns' && k !== 'domains') fail(`tuntematon spyware-kenttä ${k}`);
+  if (!spy.campaigns.every((x) => x && typeof x.name === 'string' && x.name.length <= 80 && typeof x.source === 'string')) fail('virheellinen spyware-kampanja');
+  const spySeen = new Set();
+  for (const e of spy.domains) {
+    if (!Array.isArray(e) || e.length !== 2) fail('virheellinen spyware-rivi');
+    const [d, i] = e;
+    if (typeof d !== 'string' || !DOMAIN_RE.test(d)) fail(`virheellinen spyware-domain ${d}`);
+    if (!Number.isInteger(i) || i < 0 || i >= spy.campaigns.length) fail(`spyware-kampanjaindeksi ${i}`);
+    if (spySeen.has(d)) fail(`spyware-domain kahdesti ${d}`);
+    spySeen.add(d);
+  }
+  const spyClash = neverFlagDomains.filter((d) => spySeen.has(d));
+  if (spyClash.length) fail(`spyware-listalla oikeita brändidomaineja: ${spyClash.join(', ')}`);
+  if (c.spywareDomains != null && c.spywareDomains !== spy.domains.length) fail('spyware-määrä ei täsmää');
 
   const ov = bundle.ruleOverrides || {};
   for (const k of Object.keys(ov)) if (k !== 'allowlistPackages') fail(`tuntematon etäsäätö ${k}`);
