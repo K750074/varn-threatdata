@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Värn – tietosuojaseloste</title>
+<meta name="description" content="Värn-sovelluksen tietosuojaseloste. Ei tiliä, ei palvelinta, ei analytiikkaa.">
+<style>
+  :root {
+    --bg: #F3F1EC; --surface: #FFFFFF; --text: #14181E; --muted: #5A6370; --line: #DCD6CC; --accent: #2C5470;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0E1116; --surface: #1A1F27; --text: #EDEAE3; --muted: #9AA3B0; --line: #2A313C; --accent: #A9C4D6; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+  nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+  nav a { padding: 6px 14px; border: 1px solid var(--line); border-radius: 999px; color: var(--accent); text-decoration: none; font-weight: 600; font-size: 14px; }
+  h1 { font-size: 28px; line-height: 1.25; margin: 0 0 4px; }
+  h2 { font-size: 19px; margin: 32px 0 8px; }
+  .date { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
+  .lead { background: var(--surface); border-left: 3px solid var(--accent); border-radius: 12px; padding: 14px 16px; }
+  section.lang { padding-bottom: 32px; margin-bottom: 40px; border-bottom: 1px solid var(--line); }
+  section.lang:last-of-type { border-bottom: none; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; background: var(--surface); border-radius: 12px; overflow: hidden; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  th { font-size: 13px; color: var(--muted); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  .wrap { overflow-x: auto; }
+  a { color: var(--accent); }
+  ul { padding-left: 20px; }
+  code { font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+<nav aria-label="Kieli / Språk / Language">
+  <a href="#fi">Suomi</a><a href="#sv">Svenska</a><a href="#en">English</a>
+</nav>
+
+<!-- ============================ SUOMI ============================ -->
+<section class="lang" id="fi" lang="fi">
+<h1>Värn – tietosuojaseloste</h1>
+<p class="date">Voimassa 30.10.2026 alkaen</p>
+
+<p class="lead"><strong>Lyhyesti:</strong> Värnissä ei ole tiliä, palvelinta, mainoksia eikä analytiikkaa. Tarkastukset tehdään puhelimessasi. AIPulssi Labs ei saa sinusta mitään tietoja. Alla kerrotaan tarkasti, mitä puhelimesta lähtee ja minne – esimerkiksi Suoja käyttää salattua DNS-palvelua.</p>
+
+<h2>1. Rekisterinpitäjä</h2>
+<p>AIPulssi Labs (Y-tunnus 3641289-1), Suomi. Yhteydenotot: <a href="mailto:SÄHKÖPOSTI">SÄHKÖPOSTI</a>.</p>
+
+<h2>2. Mitä Värn käsittelee vain puhelimessasi</h2>
+<p>Nämä tiedot eivät lähde puhelimesta mihinkään:</p>
+<ul>
+  <li>asennetut sovellukset ja niiden oikeudet (urkinta-, etähallinta- ja haittaohjelmien tunnistus)</li>
+  <li>laitteen asetukset, kuten näytön lukitus, tietoturvapäivitys ja kehittäjäasetukset</li>
+  <li>saapuvien puhelujen numerot huijaussuojan seulontaa varten sekä omat esto- ja sallittujen listasi</li>
+  <li>lähellä olevat Bluetooth-laitteet seurantalaitteiden tunnistamiseksi</li>
+  <li>yhdistetyn Wi-Fi-verkon tiedot Tämä verkko -tarkistukseen</li>
+  <li>Suojan ja viikkokatsauksen laskurit sekä hälytysten tiedot</li>
+</ul>
+<p>Tiedot säilyvät puhelimessa, kunnes poistat Värnin tai tyhjennät sen tiedot. Varmuuskopiointi pilveen ja siirto uuteen puhelimeen on estetty.</p>
+
+<h2>3. Mitä puhelimesta lähtee</h2>
+<div class="wrap"><table>
+  <tr><th>Toiminto</th><th>Minne</th><th>Mitä lähtee</th></tr>
+  <tr><td>Suoja (valinnainen, kytket itse)</td><td>Cloudflare (1.1.1.1) tai Google Public DNS (8.8.8.8)</td><td>Verkkotunnusten nimet, joihin puhelin ottaa yhteyttä (DNS-kyselyt), salattuna (DNS over HTTPS). Palvelu näkee myös IP-osoitteesi, kuten mikä tahansa DNS-palvelu – ilman Suojaa kyselyt menevät yleensä operaattorillesi. Värn ei tallenna eikä lokita kyselyjä.</td></tr>
+  <tr><td>Uhkatietojen päivitys, kerran vuorokaudessa</td><td>GitHub</td><td>Ei tietojasi. Kaikki käyttäjät lataavat saman tiedoston. GitHub näkee IP-osoitteen, kuten minkä tahansa latauksen yhteydessä.</td></tr>
+  <tr><td>Tämä verkko -tarkistus</td><td>cloudflare-dns.com, dns.google</td><td>Ei tietojasi. Testiyhteys, jolla tarkistetaan, puretaanko salattuja yhteyksiä.</td></tr>
+  <tr><td>Salasanatarkistus</td><td>Have I Been Pwned (api.pwnedpasswords.com)</td><td>Vain salasanan SHA-1-tiivisteen viisi ensimmäistä merkkiä. Salasana ei lähde, eikä sitä voi päätellä niistä. Vertailu tehdään puhelimessa.</td></tr>
+  <tr><td>Sähköpostin vuototarkistus</td><td>haveibeenpwned.com selaimessa</td><td>Värn avaa sivun selaimeesi. Siellä syöttämäsi tiedot kuuluvat sivuston ehtojen piiriin.</td></tr>
+  <tr><td>Pro-osto</td><td>Google Play</td><td>Google käsittelee maksun. Värn tarkistaa ostokuitin puhelimessa eikä lähetä ostotietoja minnekään.</td></tr>
+</table></div>
+<p>DNS-palvelujen omat säilytysajat: Cloudflare poistaa lokit 25 tunnin kuluessa (<a href="https://developers.cloudflare.com/1.1.1.1/privacy/public-dns-resolver/">Cloudflare</a>). Google poistaa väliaikaiset lokit 24–48 tunnin kuluessa ja säilyttää otoksen ilman IP-osoitetta pysyvästi (<a href="https://developers.google.com/speed/public-dns/privacy">Google</a>).</p>
+
+<h2>4. Käyttötarkoitus ja oikeusperuste</h2>
+<p>Tietoja käsitellään vain, jotta voit käyttää itse käynnistämiäsi toimintoja (EU:n yleisen tietosuoja-asetuksen 6 artiklan 1 kohdan b alakohta). Värn ei profiloi, ei näytä mainoksia eikä myy tai luovuta tietoja.</p>
+
+<h2>5. Siirrot EU:n ja ETA:n ulkopuolelle</h2>
+<p>Cloudflare, Google ja GitHub voivat käsitellä yllä mainittuja yhteystietoja myös Yhdysvalloissa. Siirrot tehdään näiden yritysten omien ehtojen ja niiden käyttämien siirtomekanismien mukaisesti.</p>
+
+<h2>6. Oikeutesi</h2>
+<p>Koska AIPulssi Labs ei saa tietojasi, sillä ei ole sinusta tietoja, joita näyttää, korjata tai poistaa. Puhelimen tiedot poistat poistamalla Värnin tai tyhjentämällä sen tiedot Androidin asetuksista. Suojan tietojen käsittelyn lopetat sammuttamalla Suojan. Voit tehdä valituksen <a href="https://tietosuoja.fi">tietosuojavaltuutetun toimistolle</a>.</p>
+
+<h2>7. Luvat ja miksi niitä tarvitaan</h2>
+<ul>
+  <li><strong>Asennettujen sovellusten luku</strong> – urkinta-, etähallinta- ja haittaohjelmien tunnistus.</li>
+  <li><strong>VPN</strong> – Suoja ohjaa vain DNS-kyselyt puhelimen sisäisen suodattimen kautta. Muu liikenne ei kulje Värnin kautta.</li>
+  <li><strong>Puhelunseulonta</strong> – estolistat ja Huijaus käynnissä -varoitus. Android näyttää Värnille vain numerot, jotka eivät ole yhteystiedoissasi.</li>
+  <li><strong>Bluetooth</strong> – seurantalaitteiden etsintä. Sijaintia ei johdeta.</li>
+  <li><strong>Ilmoitukset</strong> – hälytykset ja viikkokatsaus.</li>
+  <li><strong>Käynnistys puhelimen käynnistyessä</strong> – Suoja palautuu päälle, jos jätit sen päälle.</li>
+</ul>
+
+<h2>8. Muutokset</h2>
+<p>Jos seloste muuttuu, päivitetty versio julkaistaan tällä sivulla ja voimaantulopäivä muuttuu.</p>
+</section>
+
+<!-- ============================ SVENSKA ============================ -->
+<section class="lang" id="sv" lang="sv">
+<h1>Värn – integritetspolicy</h1>
+<p class="date">Gäller från 30.10.2026</p>
+
+<p class="lead"><strong>Kort sagt:</strong> Värn har inget konto, ingen server, inga annonser och ingen analys. Kontrollerna görs i din telefon. AIPulssi Labs får inga uppgifter om dig. Nedan står exakt vad som lämnar telefonen och vart – till exempel använder Skydd en krypterad DNS-tjänst.</p>
+
+<h2>1. Personuppgiftsansvarig</h2>
+<p>AIPulssi Labs (FO-nummer 3641289-1), Finland. Kontakt: <a href="mailto:SÄHKÖPOSTI">SÄHKÖPOSTI</a>.</p>
+
+<h2>2. Vad Värn behandlar bara i din telefon</h2>
+<p>Dessa uppgifter lämnar aldrig telefonen:</p>
+<ul>
+  <li>installerade appar och deras behörigheter (för att upptäcka spion-, fjärrstyrnings- och skadeprogram)</li>
+  <li>enhetens inställningar, till exempel skärmlås, säkerhetsuppdatering och utvecklaralternativ</li>
+  <li>nummer på inkommande samtal för bedrägeriskyddets granskning samt dina egna spärr- och tillåtlistor</li>
+  <li>Bluetooth-enheter i närheten för att upptäcka spårare</li>
+  <li>uppgifter om anslutet Wi-Fi-nätverk för kontrollen Det här nätverket</li>
+  <li>räknare för Skydd och veckoöversikten samt larmuppgifter</li>
+</ul>
+<p>Uppgifterna finns kvar i telefonen tills du avinstallerar Värn eller rensar dess data. Säkerhetskopiering till molnet och överföring till ny telefon är blockerad.</p>
+
+<h2>3. Vad som lämnar telefonen</h2>
+<div class="wrap"><table>
+  <tr><th>Funktion</th><th>Vart</th><th>Vad som skickas</th></tr>
+  <tr><td>Skydd (valfritt, du slår på det själv)</td><td>Cloudflare (1.1.1.1) eller Google Public DNS (8.8.8.8)</td><td>Namnen på de domäner telefonen ansluter till (DNS-frågor), krypterat (DNS over HTTPS). Tjänsten ser också din IP-adress, som vilken DNS-tjänst som helst – utan Skydd går frågorna oftast till din operatör. Värn sparar eller loggar inte frågorna.</td></tr>
+  <tr><td>Uppdatering av hotdata, en gång per dygn</td><td>GitHub</td><td>Inga uppgifter om dig. Alla användare laddar ner samma fil. GitHub ser IP-adressen, som vid all nedladdning.</td></tr>
+  <tr><td>Kontrollen Det här nätverket</td><td>cloudflare-dns.com, dns.google</td><td>Inga uppgifter om dig. En testanslutning som kontrollerar om krypterade anslutningar bryts upp.</td></tr>
+  <tr><td>Lösenordskontroll</td><td>Have I Been Pwned (api.pwnedpasswords.com)</td><td>Bara de fem första tecknen av lösenordets SHA-1-hash. Lösenordet skickas inte och kan inte härledas. Jämförelsen görs i telefonen.</td></tr>
+  <tr><td>Kontroll av e-postläckor</td><td>haveibeenpwned.com i webbläsaren</td><td>Värn öppnar sidan i din webbläsare. Det du anger där omfattas av webbplatsens villkor.</td></tr>
+  <tr><td>Pro-köp</td><td>Google Play</td><td>Google hanterar betalningen. Värn kontrollerar kvittot i telefonen och skickar inga köpuppgifter någonstans.</td></tr>
+</table></div>
+<p>DNS-tjänsternas egna lagringstider: Cloudflare raderar loggarna inom 25 timmar (<a href="https://developers.cloudflare.com/1.1.1.1/privacy/public-dns-resolver/">Cloudflare</a>). Google raderar tillfälliga loggar inom 24–48 timmar och sparar ett urval utan IP-adress permanent (<a href="https://developers.google.com/speed/public-dns/privacy">Google</a>).</p>
+
+<h2>4. Ändamål och rättslig grund</h2>
+<p>Uppgifterna behandlas bara för att du ska kunna använda funktioner som du själv startar (artikel 6.1 b i EU:s dataskyddsförordning). Värn profilerar inte, visar inga annonser och säljer eller lämnar inte ut uppgifter.</p>
+
+<h2>5. Överföring utanför EU/EES</h2>
+<p>Cloudflare, Google och GitHub kan behandla ovan nämnda anslutningsuppgifter även i USA. Överföringarna sker enligt dessa företags egna villkor och de överföringsmekanismer de använder.</p>
+
+<h2>6. Dina rättigheter</h2>
+<p>Eftersom AIPulssi Labs inte får dina uppgifter har företaget inga uppgifter om dig att visa, rätta eller radera. Uppgifterna i telefonen raderar du genom att avinstallera Värn eller rensa dess data i Androids inställningar. Behandlingen i Skydd upphör när du stänger av Skydd. Du kan lämna klagomål till <a href="https://tietosuoja.fi/sv">dataombudsmannens byrå</a>.</p>
+
+<h2>7. Behörigheter och varför de behövs</h2>
+<ul>
+  <li><strong>Läsa installerade appar</strong> – för att upptäcka spion-, fjärrstyrnings- och skadeprogram.</li>
+  <li><strong>VPN</strong> – Skydd leder bara DNS-frågor genom ett filter i telefonen. Övrig trafik går inte via Värn.</li>
+  <li><strong>Samtalsgranskning</strong> – spärrlistor och varningen för pågående bedrägeri. Android visar Värn bara nummer som inte finns bland dina kontakter.</li>
+  <li><strong>Bluetooth</strong> – sökning efter spårare. Ingen plats härleds.</li>
+  <li><strong>Aviseringar</strong> – larm och veckoöversikt.</li>
+  <li><strong>Start när telefonen startar</strong> – Skydd slås på igen om du lämnade det på.</li>
+</ul>
+
+<h2>8. Ändringar</h2>
+<p>Om policyn ändras publiceras den uppdaterade versionen på den här sidan och datumet ändras.</p>
+</section>
+
+<!-- ============================ ENGLISH ============================ -->
+<section class="lang" id="en" lang="en">
+<h1>Värn – privacy policy</h1>
+<p class="date">Effective from 30 October 2026</p>
+
+<p class="lead"><strong>In short:</strong> Värn has no account, no server, no ads and no analytics. Checks run on your phone. AIPulssi Labs receives no data about you. Below is exactly what leaves your phone and where it goes – for example, Shield uses an encrypted DNS service.</p>
+
+<h2>1. Controller</h2>
+<p>AIPulssi Labs (business ID 3641289-1), Finland. Contact: <a href="mailto:SÄHKÖPOSTI">SÄHKÖPOSTI</a>.</p>
+
+<h2>2. What Värn processes only on your phone</h2>
+<p>This data never leaves your phone:</p>
+<ul>
+  <li>installed apps and their permissions (to detect stalkerware, remote-access tools and malware)</li>
+  <li>device settings such as screen lock, security patch and developer options</li>
+  <li>incoming call numbers for call screening, and your own block and trusted lists</li>
+  <li>nearby Bluetooth devices, to detect trackers</li>
+  <li>details of the connected Wi-Fi network for the This network check</li>
+  <li>Shield and weekly report counters, and alert details</li>
+</ul>
+<p>This data stays on your phone until you uninstall Värn or clear its data. Cloud backup and transfer to a new phone are blocked.</p>
+
+<h2>3. What leaves your phone</h2>
+<div class="wrap"><table>
+  <tr><th>Feature</th><th>Where</th><th>What is sent</th></tr>
+  <tr><td>Shield (optional, you turn it on)</td><td>Cloudflare (1.1.1.1) or Google Public DNS (8.8.8.8)</td><td>The names of the domains your phone connects to (DNS queries), encrypted (DNS over HTTPS). The service also sees your IP address, like any DNS service – without Shield, queries usually go to your mobile operator. Värn does not store or log the queries.</td></tr>
+  <tr><td>Threat data update, once a day</td><td>GitHub</td><td>No data about you. Every user downloads the same file. GitHub sees the IP address, as with any download.</td></tr>
+  <tr><td>This network check</td><td>cloudflare-dns.com, dns.google</td><td>No data about you. A test connection that checks whether encrypted connections are being intercepted.</td></tr>
+  <tr><td>Password check</td><td>Have I Been Pwned (api.pwnedpasswords.com)</td><td>Only the first five characters of the password's SHA-1 hash. The password is not sent and cannot be derived from them. The comparison is done on your phone.</td></tr>
+  <tr><td>Email breach check</td><td>haveibeenpwned.com in your browser</td><td>Värn opens the site in your browser. What you enter there is covered by that site's terms.</td></tr>
+  <tr><td>Pro purchase</td><td>Google Play</td><td>Google handles the payment. Värn checks the receipt on your phone and does not send purchase data anywhere.</td></tr>
+</table></div>
+<p>Retention by the DNS services: Cloudflare deletes its logs within 25 hours (<a href="https://developers.cloudflare.com/1.1.1.1/privacy/public-dns-resolver/">Cloudflare</a>). Google deletes temporary logs within 24–48 hours and keeps a sample without IP addresses permanently (<a href="https://developers.google.com/speed/public-dns/privacy">Google</a>).</p>
+
+<h2>4. Purpose and legal basis</h2>
+<p>Data is processed only so that you can use features you start yourself (Article 6(1)(b) of the EU General Data Protection Regulation). Värn does no profiling, shows no ads, and does not sell or disclose data.</p>
+
+<h2>5. Transfers outside the EU/EEA</h2>
+<p>Cloudflare, Google and GitHub may process the connection data described above in the United States as well. Transfers follow these companies' own terms and the transfer mechanisms they use.</p>
+
+<h2>6. Your rights</h2>
+<p>Because AIPulssi Labs receives no data about you, it holds no data to show, correct or delete. You delete the data on your phone by uninstalling Värn or clearing its data in Android settings. Shield's processing stops when you turn Shield off. You can lodge a complaint with the <a href="https://tietosuoja.fi/en">Office of the Data Protection Ombudsman</a>.</p>
+
+<h2>7. Permissions and why they are needed</h2>
+<ul>
+  <li><strong>Reading installed apps</strong> – to detect stalkerware, remote-access tools and malware.</li>
+  <li><strong>VPN</strong> – Shield routes only DNS queries through a filter on your phone. Other traffic does not pass through Värn.</li>
+  <li><strong>Call screening</strong> – block lists and the Scam in progress warning. Android only shows Värn numbers that are not in your contacts.</li>
+  <li><strong>Bluetooth</strong> – searching for trackers. No location is derived.</li>
+  <li><strong>Notifications</strong> – alerts and the weekly report.</li>
+  <li><strong>Start at boot</strong> – Shield turns back on if you left it on.</li>
+</ul>
+
+<h2>8. Changes</h2>
+<p>If this policy changes, the updated version is published on this page and the effective date changes.</p>
+</section>
+</main>
+</body>
+</html>
