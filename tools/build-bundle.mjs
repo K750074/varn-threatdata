@@ -151,7 +151,7 @@ async function main() {
       log(`Exodus: ohitettu (${e.message})`);
       return null;
     }),
-    buildBlocklist({urlhausAuthKey: process.env.URLHAUS_AUTH_KEY}).catch((e) => {
+    buildBlocklist().catch((e) => {
       log(`Estolista: ohitettu (${e.message})`);
       return null;
     }),

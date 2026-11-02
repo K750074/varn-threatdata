@@ -41,16 +41,6 @@
     "attribution": "Mainos- ja seurantaesto: StevenBlack hosts (MIT)"
   },
   {
-    "id": "urlhaus",
-    "name": "URLhaus (abuse.ch)",
-    "url": "https://urlhaus.abuse.ch/",
-    "license": "CC0",
-    "commercialUse": true,
-    "credit": "abuse.ch URLhaus",
-    "creditLicense": "CC0",
-    "attribution": "Haittaohjelmaesto: abuse.ch URLhaus (CC0)"
-  },
-  {
     "id": "spyware-amnesty",
     "name": "Amnesty International – Security Lab investigations",
     "url": "https://github.com/AmnestyTech/investigations",

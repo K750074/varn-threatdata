@@ -1,9 +1,11 @@
 /**
  * Värn – DNS-estolistan kokoaminen. Vain juridisesti sallivat lähteet (kaupallinen käyttö ok):
  *   - StevenBlack hosts (MIT): mainokset ja seuranta (~75 000)   [universaali]
- *   - URLhaus (CC0, abuse.ch): haittaohjelmapalvelimet            [universaali]
  *   - DoH-kiertosuoja (oma kuratointi)                           [universaali]
  *   - Oma typosquat (generoitu itse, ei lisenssiä): kalastelu paikallisilta brändeiltä [maakohtainen]
+ *
+ * URLhaus (abuse.ch) poistettu 2.11.2026: avaimettomat lataukset lopetettiin 21.10.2026 (HTTP 410),
+ * ja avaimella kaupallinen käyttö vaatii maksullisen Spamhaus-tilauksen (abuse.ch käyttöehdot 4.1).
  *
  * Aluetietoinen: typosquat generoidaan maakohtaisesti (COUNTRIES). Kansainvälistyminen on vain
  * uuden maan lisäys COUNTRIES-rakenteeseen – moottori ja sovelluksen logiikka pysyvät samoina.
@@ -13,7 +15,6 @@
 
 const SOURCES = {
   stevenblack: "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts",
-  urlhaus: "https://urlhaus.abuse.ch/downloads/hostfile/",
 };
 
 const DOMAIN_RE = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/;
@@ -217,7 +218,7 @@ export function dohBypassDomains() {
 }
 
 /**
- * Kokoaa estolistan. Universaali osa (mainokset, seuranta, haittaohjelmat, DoH-kierto) on sama
+ * Kokoaa estolistan. Universaali osa (mainokset, seuranta, DoH-kierto) on sama
  * kaikkialla; typosquat on maakohtainen. Palauttaa universaalin listan ja maakohtaiset listat
  * erikseen, jotta sovellus voi ladata käyttäjän alueen mukaan.
  */
@@ -232,15 +233,6 @@ export async function buildBlocklist(options = {}) {
     stats.stevenblack = sb.domains.size;
   } catch (e) {
     stats.stevenblack = `virhe: ${e.message}`;
-  }
-
-  // URLhaus (CC0) – universaali
-  try {
-    const uh = await loadHostsSource(SOURCES.urlhaus, options.urlhausAuthKey);
-    uh.domains.forEach((d) => universal.add(d));
-    stats.urlhaus = uh.domains.size;
-  } catch (e) {
-    stats.urlhaus = `ohitettu: ${e.message}`;
   }
 
   // DoH-kiertosuoja – universaali
