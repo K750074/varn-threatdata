@@ -41,6 +41,16 @@
     "attribution": "Mainos- ja seurantaesto: StevenBlack hosts (MIT)"
   },
   {
+    "id": "certpl",
+    "name": "CERT Polska – varoituslista (Lista ostrzeżeń)",
+    "url": "https://cert.pl/en/warning-list/",
+    "license": "CERT Polskan ehdot: käyttö mihin tahansa tarkoitukseen, myös kaupallisesti",
+    "commercialUse": true,
+    "credit": "CERT Polska",
+    "creditLicense": null,
+    "attribution": "Kalastelusivut: CERT Polskan varoituslista (osa)"
+  },
+  {
     "id": "spyware-amnesty",
     "name": "Amnesty International – Security Lab investigations",
     "url": "https://github.com/AmnestyTech/investigations",

@@ -2,6 +2,8 @@
  * Värn – DNS-estolistan kokoaminen. Vain juridisesti sallivat lähteet (kaupallinen käyttö ok):
  *   - StevenBlack hosts (MIT): mainokset ja seuranta (~75 000)   [universaali]
  *   - DoH-kiertosuoja (oma kuratointi)                           [universaali]
+ *   - CERT Polska -varoituslista (kaupallinen käyttö sallittu): kalastelusivut, VAIN pohjoismaille
+ *     ja kansainvälisille brändeille relevantit (~2 500 / ~126 000)  [universaali]
  *   - Oma typosquat (generoitu itse, ei lisenssiä): kalastelu paikallisilta brändeiltä [maakohtainen]
  *
  * URLhaus (abuse.ch) poistettu 2.11.2026: avaimettomat lataukset lopetettiin 21.10.2026 (HTTP 410),
@@ -15,6 +17,7 @@
 
 const SOURCES = {
   stevenblack: "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts",
+  certpl: "https://hole.cert.pl/domains/v2/domains.txt",
 };
 
 const DOMAIN_RE = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/;
@@ -87,6 +90,31 @@ function extractDomain(line) {
   domain = domain.toLowerCase().replace(/\.$/, "");
   if (domain === "localhost" || domain === "0.0.0.0" || domain === "::1") return null;
   return DOMAIN_RE.test(domain) ? domain : null;
+}
+
+/**
+ * CERT Polskan lista on tehty puolalaisia vastaan kohdistetuille huijauksille (~126 000 domainia,
+ * 6 kk). Suomalaiselle hyödylliset ovat ne, jotka jäljittelevät kansainvälisiä tai pohjoismaisia
+ * brändejä tai ovat pohjoismaisilla maatunnuksilla. Muut (Allegro, InPost, PKO …) jätetään pois,
+ * jottei paketti ja Suojan muisti kasva turhaan. Mittaus 3.11.2026: 2 440 + 198 osumaa.
+ */
+// Pitkät brändit: osamerkkijono riittää (huijausdomainit liimaavat sanoja yhteen: allyoposti.store).
+const CERTPL_BRANDS_LONG = [
+  "posti", "postnord", "matkahuolto", "budbee", "nordea", "danske", "osuuspankki", "saastopankki",
+  "handelsbanken", "swedbank", "aktia", "omakanta", "traficom", "mobilepay", "klarna", "revolut",
+  "vinted", "paypal", "netflix", "spotify", "disney", "microsoft", "office365", "outlook",
+  "icloud", "apple", "facebook", "instagram", "whatsapp", "telegram", "linkedin", "booking",
+  "airbnb", "amazon", "binance", "coinbase", "steam", "fedex",
+];
+// Lyhyet: vain sanan alussa (dhl-pl.top, dhlpaket…), ettei satunnaisiin merkkijonoihin osuta.
+const CERTPL_BRANDS_SHORT = ["dhl", "ups", "dpd", "gls", "op", "kela", "vero", "dna", "elisa", "telia", "ikea"];
+const CERTPL_NORDIC_TLD = /\.(fi|se|no|dk|is|ax)$/;
+const CERTPL_SHORT_RE = new RegExp(`(^|[.-])(${CERTPL_BRANDS_SHORT.join("|")})`);
+
+export function certPlRelevant(domain) {
+  if (CERTPL_NORDIC_TLD.test(domain)) return true;
+  if (CERTPL_SHORT_RE.test(domain)) return true;
+  return CERTPL_BRANDS_LONG.some((b) => domain.includes(b));
 }
 
 async function loadHostsSource(url, authKey) {
@@ -233,6 +261,21 @@ export async function buildBlocklist(options = {}) {
     stats.stevenblack = sb.domains.size;
   } catch (e) {
     stats.stevenblack = `virhe: ${e.message}`;
+  }
+
+  // CERT Polska (kaupallinen käyttö sallittu, mainintaa ei vaadita) – vain relevantit
+  try {
+    const cp = await loadHostsSource(SOURCES.certpl);
+    let kept = 0;
+    cp.domains.forEach((d) => {
+      if (certPlRelevant(d)) {
+        universal.add(d);
+        kept++;
+      }
+    });
+    stats.certpl = {total: cp.domains.size, kept};
+  } catch (e) {
+    stats.certpl = `ohitettu: ${e.message}`;
   }
 
   // DoH-kiertosuoja – universaali
