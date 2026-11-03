@@ -69,5 +69,15 @@
     "credit": "Mobile Verification Toolkit (MVT)",
     "creditLicense": "MIT",
     "attribution": "Vakoiluohjelmatunnisteet: MVT indicators (MIT)"
+  },
+  {
+    "id": "traficom-senderids",
+    "name": "Traficom – suojatut SMS Sender ID -tunnukset",
+    "url": "https://traficom.fi/fi/traficomin-myontamat-numerot/suojatut-sms-sender-id-tunnukset",
+    "license": "Julkinen viranomaistieto (Traficomin verkkosivu)",
+    "commercialUse": null,
+    "credit": "Traficom",
+    "creditLicense": null,
+    "attribution": "Suojatut lähettäjätunnukset: Traficom"
   }
 ]

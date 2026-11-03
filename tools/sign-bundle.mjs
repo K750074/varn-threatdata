@@ -21,7 +21,7 @@ const PACKAGE_RE = /^[A-Za-z][\w]*(\.[\w]+)+$/;
 const CERT_RE = /^([0-9a-f]{40}|[0-9a-f]{64})$/;
 const SHA256_RE = /^[0-9a-f]{64}$/;
 const ALLOWED_KEYS = new Set([
-  'schema', 'version', 'createdAt', 'stalkerware', 'malwareApkSha256', 'trackers', 'blocklist', 'typosquat', 'spyware', 'ruleOverrides', 'sources',
+  'schema', 'version', 'createdAt', 'stalkerware', 'malwareApkSha256', 'trackers', 'blocklist', 'typosquat', 'spyware', 'senderIds', 'ruleOverrides', 'sources',
 ]);
 const COUNTRY_RE = /^[a-z]{2}$/;
 const DOMAIN_RE = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/;
@@ -118,6 +118,17 @@ async function main() {
   const spyClash = neverFlagDomains.filter((d) => spySeen.has(d));
   if (spyClash.length) fail(`spyware-listalla oikeita brändidomaineja: ${spyClash.join(', ')}`);
   if (c.spywareDomains != null && c.spywareDomains !== spy.domains.length) fail('spyware-määrä ei täsmää');
+
+  // Suojatut SMS-lähettäjätunnukset: [[tunnus, organisaatio]]
+  const sids = bundle.senderIds || [];
+  if (!Array.isArray(sids)) fail('senderIds ei ole taulukko');
+  for (const e of sids) {
+    if (!Array.isArray(e) || e.length !== 2) fail('virheellinen senderIds-rivi');
+    const [id, org] = e;
+    if (typeof id !== 'string' || !id || id.length > 20 || !/^[\p{L}\p{N} .&'+\-_]+$/u.test(id)) fail(`virheellinen lähettäjätunnus ${id}`);
+    if (typeof org !== 'string' || !org || org.length > 120) fail(`virheellinen organisaatio tunnukselle ${id}`);
+  }
+  if (c.senderIds != null && c.senderIds !== sids.length) fail('senderIds-määrä ei täsmää');
 
   const ov = bundle.ruleOverrides || {};
   for (const k of Object.keys(ov)) if (k !== 'allowlistPackages') fail(`tuntematon etäsäätö ${k}`);
