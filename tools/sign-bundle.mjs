@@ -81,7 +81,7 @@ async function main() {
 
   const blocklist = bundle.blocklist || [];
   if (!Array.isArray(blocklist)) fail('blocklist ei ole taulukko');
-  if (c.blocklist !== blocklist.length) fail('estolistan määrä ei täsmää');
+  if ((c.securityBlocklist ?? c.blocklist) !== blocklist.length) fail('estolistan määrä ei täsmää');
   // never-flag-domainit eivät saa olla estolistalla (esim. pankit, suuret palvelut)
   const neverFlagDomains = ['op.fi', 'posti.fi', 'nordea.fi', 'kela.fi', 'vero.fi', 'suomi.fi', 'google.com', 'apple.com'];
   const clashing = neverFlagDomains.filter((d) => blocklist.includes(d));

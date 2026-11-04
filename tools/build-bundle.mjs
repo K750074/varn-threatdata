@@ -38,7 +38,13 @@ const SHA256_RE = /^[0-9a-f]{64}$/;
 const log = (...a) => console.log('•', ...a);
 
 async function fetchText(url, opts = {}) {
-  const res = await fetch(url, opts);
+  let res;
+  try {
+    res = await fetch(url, opts);
+  } catch (e) {
+    // Noden "fetch failed" ei kerro osoitetta eikä syytä → lisätään molemmat.
+    throw new Error(`${url} → ${e.cause?.code || e.cause?.message || e.message}`);
+  }
   if (!res.ok) throw new Error(`${url} → HTTP ${res.status}`);
   return res.text();
 }
@@ -222,7 +228,8 @@ async function main() {
     stalkerwareCerts: bundle.stalkerware.certs.length,
     malwareApkSha256: bundle.malwareApkSha256.length,
     trackers: bundle.trackers.length,
-    blocklist: bundle.blocklist.length,
+    // Uusi avain 4.11.2026: estolista on nyt vain tietoturvaa (ei mainoksia) → ei verrata vanhaan määrään.
+    securityBlocklist: bundle.blocklist.length,
     typosquat: typosquatTotal,
     spywareDomains: bundle.spyware.domains.length,
   };

@@ -1,6 +1,7 @@
 /**
- * Värn – DNS-estolistan kokoaminen. Vain juridisesti sallivat lähteet (kaupallinen käyttö ok):
- *   - StevenBlack hosts (MIT): mainokset ja seuranta (~75 000)   [universaali]
+ * Värn – DNS-estolistan kokoaminen. Vain juridisesti sallivat lähteet (kaupallinen käyttö ok).
+ * Suoja on TIETOTURVAsuoja, ei mainosestäjä: Google Playn Device and Network Abuse -käytäntö kieltää
+ * muiden sovellusten mainosten estämisen. StevenBlack (mainokset + seuranta) poistettu 4.11.2026.
  *   - DoH-kiertosuoja (oma kuratointi)                           [universaali]
  *   - CERT Polska -varoituslista (kaupallinen käyttö sallittu): kalastelusivut, VAIN pohjoismaille
  *     ja kansainvälisille brändeille relevantit (~2 500 / ~126 000)  [universaali]
@@ -16,7 +17,6 @@
  */
 
 const SOURCES = {
-  stevenblack: "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts",
   certpl: "https://hole.cert.pl/domains/v2/domains.txt",
 };
 
@@ -246,22 +246,13 @@ export function dohBypassDomains() {
 }
 
 /**
- * Kokoaa estolistan. Universaali osa (mainokset, seuranta, DoH-kierto) on sama
+ * Kokoaa estolistan. Universaali osa (kalastelusivut, DoH-kierto) on sama
  * kaikkialla; typosquat on maakohtainen. Palauttaa universaalin listan ja maakohtaiset listat
  * erikseen, jotta sovellus voi ladata käyttäjän alueen mukaan.
  */
 export async function buildBlocklist(options = {}) {
   const universal = new Set();
   const stats = {};
-
-  // StevenBlack (MIT) – universaali
-  try {
-    const sb = await loadHostsSource(SOURCES.stevenblack);
-    sb.domains.forEach((d) => universal.add(d));
-    stats.stevenblack = sb.domains.size;
-  } catch (e) {
-    stats.stevenblack = `virhe: ${e.message}`;
-  }
 
   // CERT Polska (kaupallinen käyttö sallittu, mainintaa ei vaadita) – vain relevantit
   try {

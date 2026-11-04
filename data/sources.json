@@ -31,16 +31,6 @@
     "attribution": "Seurantatunnisteet: Exodus Privacy"
   },
   {
-    "id": "stevenblack",
-    "name": "StevenBlack hosts",
-    "url": "https://github.com/StevenBlack/hosts",
-    "license": "MIT",
-    "commercialUse": true,
-    "credit": "StevenBlack hosts",
-    "creditLicense": "MIT",
-    "attribution": "Mainos- ja seurantaesto: StevenBlack hosts (MIT)"
-  },
-  {
     "id": "certpl",
     "name": "CERT Polska – varoituslista (Lista ostrzeżeń)",
     "url": "https://cert.pl/en/warning-list/",
