@@ -15,7 +15,7 @@
  *   PREVIOUS_MANIFEST_URL  (valinnainen) edellinen julkaisu järkevyystarkistusta varten
  */
 import {createHash} from 'node:crypto';
-import {gzipSync} from 'node:zlib';
+import {gzipSync, gunzipSync} from 'node:zlib';
 import {mkdir, writeFile, readFile} from 'node:fs/promises';
 import YAML from 'yaml';
 import {loadExodusTrackers} from './exodus.mjs';
@@ -120,6 +120,27 @@ async function loadPreviousManifest() {
   }
 }
 
+/**
+ * Edellinen julkaistu paketti. Jos jokin lähde ei vastaa (esim. Traficomin sivu tai MVT hetkellisesti
+ * alhaalla), sen osa otetaan edellisestä paketista – muuten sovellukset menettäisivät suojan
+ * (tyhjä vakoiluohjelma- tai lähettäjälista) seuraavaan onnistuneeseen ajoon asti. 10.11.2026 näin kävi.
+ */
+async function loadPreviousBundle(prev) {
+  const url = process.env.PREVIOUS_MANIFEST_URL;
+  if (!url || !prev?.bundleFile || !/^[A-Za-z0-9._-]+$/.test(prev.bundleFile)) return null;
+  try {
+    const res = await fetch(url.replace(/manifest\.json(\?.*)?$/, prev.bundleFile), {redirect: 'follow'});
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const gz = Buffer.from(await res.arrayBuffer());
+    const sha = createHash('sha256').update(gz).digest('hex');
+    if (sha !== String(prev.bundleSha256).toLowerCase()) throw new Error('tiiviste ei täsmää edelliseen manifestiin');
+    return JSON.parse(gunzipSync(gz).toString('utf8'));
+  } catch (e) {
+    log(`Edellistä pakettia ei saatu (${e.message}) – puuttuvia lähteitä ei voida paikata`);
+    return null;
+  }
+}
+
 function sanityCheck(counts, prev) {
   if (counts.stalkerwarePackages < MIN_STALKERWARE_PACKAGES) {
     throw new Error(`Liian vähän stalkerware-paketteja (${counts.stalkerwarePackages}) – lähde rikki?`);
@@ -173,6 +194,15 @@ async function main() {
     loadPreviousManifest(),
   ]);
 
+  // Puuttuva lähde → edellisen paketin osa (ks. loadPreviousBundle).
+  const prevBundle = !spyware || !senders ? await loadPreviousBundle(prev) : null;
+  const spywareData = spyware
+    ? {campaigns: spyware.campaigns, domains: spyware.domains}
+    : prevBundle?.spyware?.domains?.length ? prevBundle.spyware : null;
+  const senderData = senders ? senders.ids : prevBundle?.senderIds?.length ? prevBundle.senderIds : null;
+  if (!spyware && spywareData) log(`Vakoiluohjelmat: lähde ei vastannut – käytetään edellistä (${spywareData.domains.length})`);
+  if (!senders && senderData) log(`Lähettäjätunnukset: lähde ei vastannut – käytetään edellistä (${senderData.length})`);
+
   // Suoja virheellistä lähdedataa vastaan
   for (const p of neverFlag) {
     if (echap.packages.delete(p)) {
@@ -209,14 +239,14 @@ async function main() {
     typosquat,
     // Valtiotason vakoiluohjelmien verkkotunnukset: [[domain, kampanjaindeksi]]. Sovellus estää ne
     // aina (käyttäjä ei voi sallia) ja näyttää vakavan ilmoituksen.
-    spyware: {campaigns: spyware ? spyware.campaigns : [], domains: spyware ? spyware.domains : []},
+    spyware: spywareData || {campaigns: [], domains: []},
     // Traficomin suojatut SMS-lähettäjätunnukset (Suomi): [[tunnus, organisaatio]].
-    senderIds: senders ? senders.ids : [],
+    senderIds: senderData || [],
     ruleOverrides: overrides,
     sources: sources
       .filter((s) => !(s.optional && s.id === 'malwarebazaar-apk' && mb.skipped))
-      .filter((s) => !(s.id.startsWith('spyware-') && !spyware))
-      .filter((s) => !(s.id === 'traficom-senderids' && !senders))
+      .filter((s) => !(s.id.startsWith('spyware-') && !spywareData))
+      .filter((s) => !(s.id === 'traficom-senderids' && !senderData))
       .filter((s) => !(s.id === 'certpl' && typeof blocklist?.stats?.certpl !== 'object'))
       .map(({id, name, url, license, attribution, credit, creditLicense}) =>
         ({id, name, url, license, attribution, credit, creditLicense: creditLicense ?? null})),
@@ -233,9 +263,10 @@ async function main() {
     typosquat: typosquatTotal,
     spywareDomains: bundle.spyware.domains.length,
   };
-  if (!spyware) delete counts.spywareDomains; // lähde ei vastannut → ei verrata edelliseen
+  // Lähde ei vastannut eikä edellistä saatu → ei verrata (muuten julkaisu pysähtyisi).
+  if (!spywareData) delete counts.spywareDomains;
   counts.senderIds = bundle.senderIds.length;
-  if (!senders) delete counts.senderIds;
+  if (!senderData) delete counts.senderIds;
   if (mb.skipped) delete counts.malwareApkSha256; // ei verrata, jos lähde ohitettiin tarkoituksella
   sanityCheck(counts, prev);
 
